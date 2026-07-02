@@ -4,6 +4,7 @@ import os
 import sys
 import io
 import csv
+import gzip
 from pathlib import Path
 from datetime import date, datetime
 
@@ -129,13 +130,16 @@ st.markdown("""
 def load_all_candidates():
     path = Path("candidates.jsonl")
     if not path.exists():
+        path = Path("candidates.jsonl.gz")
+    if not path.exists():
         path = Path("candidates_sample.jsonl")
         
     if not path.exists():
         return []
     
     candidates = []
-    with open(path, "r", encoding="utf-8") as f:
+    open_fn = gzip.open if path.suffix == ".gz" else open
+    with open_fn(path, "rt", encoding="utf-8") as f:
         for line in f:
             line = line.strip()
             if line:
@@ -174,15 +178,17 @@ st.markdown('<div class="subtitle-text">Advanced Intelligence meets Elite Recrui
 st.sidebar.image("https://static.streamlit.io/badges/streamlit_badge_black_white.svg", width=120)
 st.sidebar.header("Sandbox Configurations")
 
-# Load Candidates (Automatically loads full dataset, fallback to sample)
+# Load Candidates (Automatically loads full dataset, fallback to gz or sample)
 candidates = load_all_candidates()
 if candidates:
     if Path("candidates.jsonl").exists():
         st.sidebar.success(f"Loaded {len(candidates):,} candidates successfully from candidates.jsonl.")
+    elif Path("candidates.jsonl.gz").exists():
+        st.sidebar.success(f"Loaded {len(candidates):,} candidates successfully from candidates.jsonl.gz.")
     else:
         st.sidebar.warning(f"Loaded {len(candidates):,} candidates from candidates_sample.jsonl (Streamlit Cloud sandbox mode).")
 else:
-    st.sidebar.error("Could not load candidates.jsonl or candidates_sample.jsonl. Please verify the files are present.")
+    st.sidebar.error("Could not load candidates.jsonl, candidates.jsonl.gz, or candidates_sample.jsonl. Please verify the files are present.")
 
 # Application Tabs
 tab_ranker, tab_simulator, tab_jd = st.tabs([
