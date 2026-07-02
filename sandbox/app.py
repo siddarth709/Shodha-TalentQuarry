@@ -137,8 +137,15 @@ def get_candidate_file_info():
 # Cached Candidate Ranker function to prevent OOM and re-execution on every render
 @st.cache_data(ttl=600, show_spinner="Ranking candidates...")
 def rank_candidates_cached(file_path_str: str, jd_text: str):
-    import gzip
     import json
+    # Load precomputed database if available to prevent long startup delays
+    precomputed_path = Path("precomputed_top_candidates.json")
+    if precomputed_path.exists():
+        with open(precomputed_path, "r", encoding="utf-8") as f:
+            data = json.load(f)
+        return data["top_results"], data["total_processed"], data["eliminated_count"]
+
+    import gzip
     import heapq
     
     file_path = Path(file_path_str)
@@ -215,7 +222,10 @@ st.sidebar.header("Sandbox Configurations")
 
 # Locate Candidates database file
 file_path = get_candidate_file_info()
-if file_path:
+precomputed_active = Path("precomputed_top_candidates.json").exists()
+if precomputed_active:
+    st.sidebar.success("Loaded database successfully from precomputed_top_candidates.json.")
+elif file_path:
     if file_path.name == "candidates.jsonl":
         st.sidebar.success("Loaded database successfully from candidates.jsonl.")
     elif file_path.name == "candidates.jsonl.gz":
@@ -223,7 +233,7 @@ if file_path:
     else:
         st.sidebar.warning("Using candidates_sample.jsonl (Streamlit Cloud sandbox mode).")
 else:
-    st.sidebar.error("Could not locate candidates.jsonl, candidates.jsonl.gz, or candidates_sample.jsonl. Please verify the files are present.")
+    st.sidebar.error("Could not locate candidates database. Please verify the files are present.")
 
 # Application Tabs
 tab_ranker, tab_simulator, tab_jd = st.tabs([
