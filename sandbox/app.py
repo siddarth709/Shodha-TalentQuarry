@@ -125,26 +125,14 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# Helper Function: Efficient Cached Loader for Candidates
-@st.cache_data(show_spinner="Loading candidates dataset...")
-def load_all_candidates():
+# Helper Function: Locate Candidates Database Path (local or cloud)
+def get_candidate_file_info():
     path = Path("candidates.jsonl")
     if not path.exists():
         path = Path("candidates.jsonl.gz")
     if not path.exists():
         path = Path("candidates_sample.jsonl")
-        
-    if not path.exists():
-        return []
-    
-    candidates = []
-    open_fn = gzip.open if path.suffix == ".gz" else open
-    with open_fn(path, "rt", encoding="utf-8") as f:
-        for line in f:
-            line = line.strip()
-            if line:
-                candidates.append(json.loads(line))
-    return candidates
+    return path if path.exists() else None
 
 # Default Job Description Loader
 @st.cache_data
@@ -178,17 +166,17 @@ st.markdown('<div class="subtitle-text">Advanced Intelligence meets Elite Recrui
 st.sidebar.image("https://static.streamlit.io/badges/streamlit_badge_black_white.svg", width=120)
 st.sidebar.header("Sandbox Configurations")
 
-# Load Candidates (Automatically loads full dataset, fallback to gz or sample)
-candidates = load_all_candidates()
-if candidates:
-    if Path("candidates.jsonl").exists():
-        st.sidebar.success(f"Loaded {len(candidates):,} candidates successfully from candidates.jsonl.")
-    elif Path("candidates.jsonl.gz").exists():
-        st.sidebar.success(f"Loaded {len(candidates):,} candidates successfully from candidates.jsonl.gz.")
+# Locate Candidates database file
+file_path = get_candidate_file_info()
+if file_path:
+    if file_path.name == "candidates.jsonl":
+        st.sidebar.success("Loaded database successfully from candidates.jsonl.")
+    elif file_path.name == "candidates.jsonl.gz":
+        st.sidebar.success("Loaded database successfully from candidates.jsonl.gz.")
     else:
-        st.sidebar.warning(f"Loaded {len(candidates):,} candidates from candidates_sample.jsonl (Streamlit Cloud sandbox mode).")
+        st.sidebar.warning("Using candidates_sample.jsonl (Streamlit Cloud sandbox mode).")
 else:
-    st.sidebar.error("Could not load candidates.jsonl, candidates.jsonl.gz, or candidates_sample.jsonl. Please verify the files are present.")
+    st.sidebar.error("Could not locate candidates.jsonl, candidates.jsonl.gz, or candidates_sample.jsonl. Please verify the files are present.")
 
 # Application Tabs
 tab_ranker, tab_simulator, tab_jd = st.tabs([
@@ -216,34 +204,52 @@ with tab_jd:
 
 # Candidate Ranker Tab
 with tab_ranker:
-    if not candidates:
-        st.warning("Please verify that candidates.jsonl is present in the workspace root.")
+    if not file_path:
+        st.warning("Please verify that candidates database is present in the workspace root.")
     else:
         st.subheader("Discover and Rank Candidates")
         
         # Scoring Execution
         with st.spinner("Scoring and ranking candidates..."):
-            # Run V1 scorer
-            results = []
+            import heapq
+            top_heap = []
+            total_processed = 0
             eliminated_count = 0
-            for c in candidates:
-                scored = score_candidate(c)
-                if scored is None:
-                    eliminated_count += 1
-                else:
-                    results.append(scored)
+            counter = 0
             
-            # Sort and scale display scores
-            results.sort(key=lambda x: (-x["raw_score"], x["candidate_id"]))
-            if results:
-                max_raw = max((r["raw_score"] for r in results), default=1.0)
+            open_fn = gzip.open if file_path.suffix == ".gz" else open
+            with open_fn(file_path, "rt", encoding="utf-8") as f:
+                for line in f:
+                    line = line.strip()
+                    if not line:
+                        continue
+                    total_processed += 1
+                    c = json.loads(line)
+                    scored = score_candidate(c)
+                    if scored is None:
+                        eliminated_count += 1
+                    else:
+                        raw_score = scored["raw_score"]
+                        heap_item = (raw_score, counter, scored)
+                        counter += 1
+                        
+                        if len(top_heap) < 100:
+                            heapq.heappush(top_heap, heap_item)
+                        else:
+                            if raw_score > top_heap[0][0]:
+                                heapq.heappushpop(top_heap, heap_item)
+            
+            # Extract and sort results from heap
+            top_results = [item[2] for item in top_heap]
+            top_results.sort(key=lambda x: (-x["raw_score"], x["candidate_id"]))
+            if top_results:
+                max_raw = max((r["raw_score"] for r in top_results), default=1.0)
                 scale = max(max_raw, 1.0)
-                for r in results:
+                for r in top_results:
                     r["display_score"] = r["raw_score"] / scale
-                results.sort(key=lambda x: (-round(x["display_score"], 4), x["candidate_id"]))
+                top_results.sort(key=lambda x: (-round(x["display_score"], 4), x["candidate_id"]))
             
-            total_processed = len(candidates)
-            top_results = results[:100]  # Fixed to top 100
+            scored_count = total_processed - eliminated_count
         
         # Render Metrics
         col_m1, col_m2, col_m3 = st.columns(3)
@@ -255,16 +261,17 @@ with tab_ranker:
             </div>
             """, unsafe_allow_html=True)
         with col_m2:
+            pct_elim = (eliminated_count / total_processed) if total_processed > 0 else 0.0
             st.markdown(f"""
             <div class="metric-card">
-                <div class="metric-val">{eliminated_count:,} ({eliminated_count/total_processed:.1%})</div>
+                <div class="metric-val">{eliminated_count:,} ({pct_elim:.1%})</div>
                 <div class="metric-lbl">Eliminated (Pass 1 Filters)</div>
             </div>
             """, unsafe_allow_html=True)
         with col_m3:
             st.markdown(f"""
             <div class="metric-card">
-                <div class="metric-val">{len(results):,}</div>
+                <div class="metric-val">{scored_count:,}</div>
                 <div class="metric-lbl">Scored & Qualified</div>
             </div>
             """, unsafe_allow_html=True)
@@ -277,7 +284,7 @@ with tab_ranker:
         st.download_button(
             label="Download Top 100 as CSV",
             data=csv_data,
-            file_name="shodha_talentquarry.csv",
+            file_name="team-Siddarth.NS.csv",
             mime="text/csv",
             help="Download the top 100 candidate ranking in the standard CSV submission format."
         )
