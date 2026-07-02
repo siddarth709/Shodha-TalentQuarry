@@ -134,6 +134,53 @@ def get_candidate_file_info():
         path = Path("candidates_sample.jsonl")
     return path if path.exists() else None
 
+# Cached Candidate Ranker function to prevent OOM and re-execution on every render
+@st.cache_data(show_spinner="Ranking candidates...")
+def rank_candidates_cached(file_path_str: str, jd_text: str):
+    import gzip
+    import json
+    import heapq
+    
+    file_path = Path(file_path_str)
+    top_heap = []
+    total_processed = 0
+    eliminated_count = 0
+    counter = 0
+    
+    open_fn = gzip.open if file_path.suffix == ".gz" else open
+    with open_fn(file_path, "rt", encoding="utf-8") as f:
+        for line in f:
+            line = line.strip()
+            if not line:
+                continue
+            total_processed += 1
+            c = json.loads(line)
+            scored = score_candidate(c)
+            if scored is None:
+                eliminated_count += 1
+            else:
+                raw_score = scored["raw_score"]
+                heap_item = (raw_score, counter, scored)
+                counter += 1
+                
+                if len(top_heap) < 100:
+                    heapq.heappush(top_heap, heap_item)
+                else:
+                    if raw_score > top_heap[0][0]:
+                        heapq.heappushpop(top_heap, heap_item)
+                        
+    # Extract results from heap
+    top_results = [item[2] for item in top_heap]
+    top_results.sort(key=lambda x: (-x["raw_score"], x["candidate_id"]))
+    if top_results:
+        max_raw = max((r["raw_score"] for r in top_results), default=1.0)
+        scale = max(max_raw, 1.0)
+        for r in top_results:
+            r["display_score"] = r["raw_score"] / scale
+        top_results.sort(key=lambda x: (-round(x["display_score"], 4), x["candidate_id"]))
+        
+    return top_results, total_processed, eliminated_count
+
 # Default Job Description Loader
 @st.cache_data
 def load_default_jd():
@@ -210,46 +257,11 @@ with tab_ranker:
         st.subheader("Discover and Rank Candidates")
         
         # Scoring Execution
-        with st.spinner("Scoring and ranking candidates..."):
-            import heapq
-            top_heap = []
-            total_processed = 0
-            eliminated_count = 0
-            counter = 0
-            
-            open_fn = gzip.open if file_path.suffix == ".gz" else open
-            with open_fn(file_path, "rt", encoding="utf-8") as f:
-                for line in f:
-                    line = line.strip()
-                    if not line:
-                        continue
-                    total_processed += 1
-                    c = json.loads(line)
-                    scored = score_candidate(c)
-                    if scored is None:
-                        eliminated_count += 1
-                    else:
-                        raw_score = scored["raw_score"]
-                        heap_item = (raw_score, counter, scored)
-                        counter += 1
-                        
-                        if len(top_heap) < 100:
-                            heapq.heappush(top_heap, heap_item)
-                        else:
-                            if raw_score > top_heap[0][0]:
-                                heapq.heappushpop(top_heap, heap_item)
-            
-            # Extract and sort results from heap
-            top_results = [item[2] for item in top_heap]
-            top_results.sort(key=lambda x: (-x["raw_score"], x["candidate_id"]))
-            if top_results:
-                max_raw = max((r["raw_score"] for r in top_results), default=1.0)
-                scale = max(max_raw, 1.0)
-                for r in top_results:
-                    r["display_score"] = r["raw_score"] / scale
-                top_results.sort(key=lambda x: (-round(x["display_score"], 4), x["candidate_id"]))
-            
-            scored_count = total_processed - eliminated_count
+        top_results, total_processed, eliminated_count = rank_candidates_cached(
+            str(file_path),
+            st.session_state["jd_text"]
+        )
+        scored_count = total_processed - eliminated_count
         
         # Render Metrics
         col_m1, col_m2, col_m3 = st.columns(3)
