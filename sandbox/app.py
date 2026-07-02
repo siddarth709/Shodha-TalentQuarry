@@ -135,7 +135,7 @@ def get_candidate_file_info():
     return path if path.exists() else None
 
 # Cached Candidate Ranker function to prevent OOM and re-execution on every render
-@st.cache_data(show_spinner="Ranking candidates...")
+@st.cache_data(ttl=600, show_spinner="Ranking candidates...")
 def rank_candidates_cached(file_path_str: str, jd_text: str):
     import gzip
     import json
