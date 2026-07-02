@@ -124,10 +124,13 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# Helper Function: Efficient Cached Loader for the Complete Candidates Dataset
-@st.cache_data(show_spinner="Loading complete candidates dataset...")
+# Helper Function: Efficient Cached Loader for Candidates
+@st.cache_data(show_spinner="Loading candidates dataset...")
 def load_all_candidates():
     path = Path("candidates.jsonl")
+    if not path.exists():
+        path = Path("candidates_sample.jsonl")
+        
     if not path.exists():
         return []
     
@@ -171,12 +174,15 @@ st.markdown('<div class="subtitle-text">Advanced Intelligence meets Elite Recrui
 st.sidebar.image("https://static.streamlit.io/badges/streamlit_badge_black_white.svg", width=120)
 st.sidebar.header("Sandbox Configurations")
 
-# Load Candidates (Automatically loads full dataset, cached)
+# Load Candidates (Automatically loads full dataset, fallback to sample)
 candidates = load_all_candidates()
 if candidates:
-    st.sidebar.success(f"Loaded {len(candidates):,} candidates successfully.")
+    if Path("candidates.jsonl").exists():
+        st.sidebar.success(f"Loaded {len(candidates):,} candidates successfully from candidates.jsonl.")
+    else:
+        st.sidebar.warning(f"Loaded {len(candidates):,} candidates from candidates_sample.jsonl (Streamlit Cloud sandbox mode).")
 else:
-    st.sidebar.error("Could not load candidates.jsonl. Please verify the file is in the workspace root.")
+    st.sidebar.error("Could not load candidates.jsonl or candidates_sample.jsonl. Please verify the files are present.")
 
 # Application Tabs
 tab_ranker, tab_simulator, tab_jd = st.tabs([
