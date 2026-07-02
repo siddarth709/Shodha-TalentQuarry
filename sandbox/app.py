@@ -271,6 +271,7 @@ with tab_ranker:
             str(file_path),
             st.session_state["jd_text"]
         )
+        top_results = top_results[:100]
         scored_count = total_processed - eliminated_count
         
         # Render Metrics
