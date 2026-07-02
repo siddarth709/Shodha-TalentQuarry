@@ -22,7 +22,7 @@ github_repo: "https://github.com/nssiddarth/shodha-talentquarry"
 
 sandbox_link: "https://shodha-talentquarry.streamlit.app"
 
-reproduce_command: "python rank.py --candidates ./candidates.jsonl --out ./shodha_talentquarry.csv"
+reproduce_command: "python rank.py --candidates ./candidates.jsonl --out ./team-Siddarth.NS.csv"
 
 # ============================================================================
 # Compute environment
