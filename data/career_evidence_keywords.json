@@ -1,0 +1,27 @@
+{
+  "tier1_evidence": [
+    "shipped", "deployed", "production", "scaled", "built", "designed",
+    "implemented", "architected", "launched", "users", "daily", "queries",
+    "latency", "throughput", "pipeline", "real-time", "embeddings",
+    "retrieval", "ranking", "search", "ndcg", "model", "inference",
+    "fine-tuned", "trained", "evaluation framework", "a/b test",
+    "reduced", "improved", "optimized", "monitoring"
+  ],
+  "consulting_anti_signals": [
+    "client deliverables", "offshore", "statement of work", "billable",
+    "client engagement", "managed stakeholders", "resource allocation",
+    "client requirements", "onsite coordination", "vendor management",
+    "support ticket", "change request", "sow", "kt session"
+  ],
+  "non_tech_titles": [
+    "hr", "human resources", "recruiter", "talent acquisition",
+    "sales", "marketing", "operations manager", "finance",
+    "accountant", "administrator", "office manager", "business development",
+    "customer support", "customer success", "legal", "compliance"
+  ],
+  "tech_keywords": [
+    "python", "sql", "machine learning", "model", "api", "database",
+    "algorithm", "data", "engineering", "software", "code", "system",
+    "pipeline", "cloud", "infrastructure", "deploy"
+  ]
+}

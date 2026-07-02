@@ -1,0 +1,7 @@
+venv/
+.pytest_cache/
+candidates.jsonl
+.DS_Store
+__pycache__/
+scorer/__pycache__/
+tests/__pycache__/

@@ -1,0 +1,24 @@
+{
+  "tier1_skills": [
+    "faiss", "qdrant", "pinecone", "weaviate", "bm25", "ndcg",
+    "sentence-transformers", "elasticsearch", "milvus", "annoy",
+    "embeddings", "vector search", "semantic search", "reranking",
+    "transformers", "pytorch", "tensorflow", "llm", "rag", "nlp"
+  ],
+  "tier2_skills": [
+    "python", "sql", "docker", "kubernetes", "aws", "gcp", "azure",
+    "spark", "airflow", "mlflow", "fastapi", "flask", "redis",
+    "kafka", "git", "linux", "pandas", "numpy", "scikit-learn"
+  ],
+  "negative_skills": [
+    "computer vision", "opencv", "yolo", "speech recognition",
+    "robotics", "ros", "autonomous driving", "image segmentation",
+    "object detection", "lidar"
+  ],
+  "consulting_firms": [
+    "tcs", "tata consultancy", "wipro", "infosys", "accenture",
+    "cognizant", "capgemini", "hcl", "tech mahindra", "ibm consulting",
+    "deloitte", "kpmg", "ey consulting", "pwc consulting", "mindtree",
+    "mphasis", "l&t infotech", "ltimindtree", "genpact"
+  ]
+}

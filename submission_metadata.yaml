@@ -1,0 +1,75 @@
+# Redrob Hackathon — Submission Metadata
+
+# ============================================================================
+# Team identity
+# ============================================================================
+team_name: "Team Siddarth"
+
+primary_contact:
+  name: "Siddarth"
+  email: "ns.siddarth@gicloud.com"
+  phone: "+91-6363729014"
+
+team_members:
+  - name: "Siddarth"
+    email: "ns.siddarth@gicloud.com"
+    role: "AIML Enthusiast and Researcher"
+
+# ============================================================================
+# Code and reproducibility
+# ============================================================================
+github_repo: "https://github.com/nssiddarth/shodha-talentquarry"
+
+sandbox_link: "https://shodha-talentquarry.streamlit.app"
+
+reproduce_command: "python rank.py --candidates ./candidates.jsonl --out ./shodha_talentquarry.csv"
+
+# ============================================================================
+# Compute environment
+# ============================================================================
+compute:
+  platform: "MacBook Air"
+  cpu_cores: 10
+  ram_gb: 16
+  python_version: "3.10"
+  os: "macOS"
+  uses_gpu_for_inference: false
+  has_network_during_ranking: false
+  pre_computation_required: false
+  pre_computation_time_minutes: 0
+
+# ============================================================================
+# AI tools declaration
+# ============================================================================
+ai_tools_used:
+  - "Gemini"
+  - "Claude"
+
+ai_usage_summary: |
+  Used Gemini to fine-tune the weightages of the five dimensions and for debugging
+  Used Claude to validate the approach and for code review
+
+# ============================================================================
+# Approach summary
+# ============================================================================
+methodology_summary: |
+  Three-pass evidence ranker (V1 Heuristic). Pass 1: O(N) hard elimination
+  (honeypots, ghosts, wrong-domain, pure-consulting profiles). Pass 2:
+  five-dimension profile score - career evidence (40%, keyword evidence from
+  career_history descriptions rather than the skills list), skills trust
+  (25%, cross-validated against career text + platform assessments),
+  experience fit (15%), location (12%), education (8%). Pass 3: a
+  multiplicative behavioural modifier (x0.40-1.30) from Redrob activity
+  signals - availability, responsiveness, reliability. Final output rank list
+  of top 100 candidates is outputted in CSV format. Run time is ~6 seconds
+  on CPU for 100,000 candidates.
+
+# ============================================================================
+# Declarations
+# ============================================================================
+declarations:
+  read_submission_spec: true
+  code_is_original_work: true
+  no_collusion: true
+  honeypot_check_done: true       # is_honeypot() in scorer/filters.py, covered by tests/test_filters.py
+  reproduction_tested: true       # verified 2026-07-02 against the real candidates.jsonl

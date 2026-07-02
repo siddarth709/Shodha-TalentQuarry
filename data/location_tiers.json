@@ -1,0 +1,4 @@
+{
+  "tier1_locations": ["pune", "noida"],
+  "tier2_locations": ["hyderabad", "mumbai", "bangalore", "bengaluru", "chennai", "gurgaon", "gurugram", "delhi", "delhi ncr", "new delhi", "kolkata"]
+}
